@@ -1,0 +1,116 @@
+default:
+  image: k510_sdk:latest
+
+stages:
+  - env
+  - build_bbl
+  - clean
+
+env:
+  stage: env
+  tags:
+    - docker
+  only:
+    refs:
+      - merge_requests
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+  before_script:
+    - echo '----------Build ENV Prepare----------' 
+    - echo 'Add SSH KEY for Kernel clone' 
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | ssh-add - > ~/.ssh/id_ed25519
+    - ls -alht ~/.ssh
+    - pwd
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - echo $SHELL
+  script:
+    - echo '----------Build ENV Check----------' 
+    - whoami
+    - uptime
+    - pwd
+    - uname -a
+    - cat /etc/issue
+    - echo $SHELL
+  after_script:
+    - echo '----------Clean ENV for build----------' 
+    - echo $SHELL
+
+build_bbl:
+  stage: build_bbl
+  needs: ["env"]
+  tags:
+    - docker
+  only:
+    refs:
+      - merge_requests
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+  before_script:
+    - echo '----------Build ENV Check----------' 
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - ls -alht ~/.ssh
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | ssh-add - > ~/.ssh/id_ed25519
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - uptime
+    - uname -a
+    - cat /etc/issue
+    - pwd
+    - ls -alht
+    - echo $SHELL
+    - echo $SHELL
+    - echo '----------Switch to git repo parent directory and prepare Linux kernel----------'
+    - cd /builds/maix/
+    - ls -alht
+    - echo '----------Clone Linux Kernel git repo----------'
+    - rm -rf /builds/maix/k510_linux_kernel/
+    - git clone git@g.b-bug.org:maix/k510_linux_kernel.git
+    - echo '----------Switch to Linux Kernel directory----------'
+    - cd k510_linux_kernel
+    - echo '----------Prepare Linux Kernel for BBL build----------'
+    - source /home/ubuntu/AndeSight_STD_v323/linux_v323.sh
+    - echo '----------Build Linux Kernel Start----------' 
+    - make k510_defconfig
+    - make vmlinux
+    - echo '----------Build Linux Kernel Finished----------' 
+  script:
+    - echo '----------Switch to BBl git repo and Create BBL build directory----------'
+    - cd /builds/maix/k510_bbl/
+    - mkdir -p build
+    - cd build
+    - echo '----------Build BBL ENV Prepare----------'
+    - source /home/ubuntu/AndeSight_STD_v323/linux_v323.sh
+    - echo '----------Config BBL build env with Linux Kernel----------'
+    - ls -alht /builds/maix/k510_linux_kernel/ |grep vmlinux
+    - /builds/maix/k510_bbl/configure --host=riscv64-linux --with-payload=/builds/maix/k510_linux_kernel/vmlinux
+    - echo '----------Build BBL Start in current directory----------'
+    - make
+    - echo '----------Convert ELF format bbl to Binary format----------'
+    - riscv64-linux-objcopy -O binary bbl bbl.bin
+    - pwd
+    - ls -alht |grep bbl
+
+clean:
+  stage: clean
+  needs: ["build_bbl"]
+  tags:
+    - docker
+  only:
+    refs:
+      - merge_requests
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+  script:
+    - pwd
+    - uptime
+    - ls -alht
+
