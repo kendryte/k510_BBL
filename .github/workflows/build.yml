@@ -22,8 +22,10 @@ jobs:
         tar -xf nds64le-linux-glibc-v5d.txz
 
     - name: build vmlinux
+      env:
+        secret: ${{ secrets.HZY_TOKEN }}
       run: |
-        git clone --depth 1 git@github.com:kendryte/k510_linux_kernel.git
+        git clone --depth 1 https://oauth2:$secret@github.com/kendryte/k510_linux_kernel.git
         cd k510_linux_kernel
         make k510_defconfig
         make vmlinux
