@@ -24,12 +24,9 @@ directory is not supported; you need to use a separate build directory.
 
     $ mkdir build
     $ cd build
-    $ ../configure --prefix=$RISCV --host=riscv64-unknown-elf
+    $ ../configure --prefix=$RISCV --host=riscv64-linux --with-payload=$PATH_TO_VMLINUX
     $ make
     $ make install
-
-Alternatively, the GNU/Linux toolchain may be used to build this package,
-by setting `--host=riscv64-unknown-linux-gnu`.
 
 By default, 64-bit (RV64) versions of `pk` and `bbl` are built.  To
 built 32-bit (RV32) versions, supply a `--enable-32bit` flag to the
