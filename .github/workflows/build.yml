@@ -16,9 +16,9 @@ jobs:
       run: |
         mkdir toolchain
         cd toolchain
-        wget -q https://github.com/andestech/Andes-Development-Kit/releases/download/ast-v3_2_1-release-linux/nds64le-elf-newlib-v5d.txz
+        wget -q https://github.com/andestech/Andes-Development-Kit/releases/download/ast-v3_2_1-release-linux/nds64le-elf-mculib-v5d.txz
         wget -q https://github.com/andestech/Andes-Development-Kit/releases/download/ast-v3_2_1-release-linux/nds64le-linux-glibc-v5d.txz
-        tar -xf nds64le-elf-newlib-v5d.txz
+        tar -xf nds64le-elf-mculib-v5d.txz
         tar -xf nds64le-linux-glibc-v5d.txz
 
     - name: build vmlinux
