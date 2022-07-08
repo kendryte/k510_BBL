@@ -378,6 +378,8 @@ struct cache_scan
   int compat;
   uint64_t cache_level;
   uint64_t reg;
+  uint32_t tag_ram_ctl[2];
+  uint32_t data_ram_ctl[2];
   uint32_t inst_prefetch;
   uint32_t data_prefetch;
 };
@@ -404,6 +406,12 @@ static void cache_prop(const struct fdt_scan_prop *prop, void *extra)
     scan->cache_level = bswap(prop->value[0]);
   } else if (!strcmp(prop->name, "reg")) {
     fdt_get_address(prop->node->parent, prop->value, &scan->reg);
+  } else if (!strcmp(prop->name, "andes,tag-ram-ctl")) {
+    scan->tag_ram_ctl[0] = bswap(prop->value[0]);
+    scan->tag_ram_ctl[1] = bswap(prop->value[1]);
+  } else if (!strcmp(prop->name, "andes,data-ram-ctl")) {
+    scan->data_ram_ctl[0] = bswap(prop->value[0]);
+    scan->data_ram_ctl[1] = bswap(prop->value[1]);
   } else if (!strcmp(prop->name, "andes,inst-prefetch")) {
     scan->inst_prefetch = bswap(prop->value[0]);
   } else if (!strcmp(prop->name, "andes,data-prefetch")) {
@@ -443,6 +451,15 @@ static void cache_done(const struct fdt_scan_node *node, void *extra)
       l2c_ctl_val &= ~(V5_L2C_CTL_IPFDPT_MASK | V5_L2C_CTL_DPFDPT_MASK);
       l2c_ctl_val |= scan->inst_prefetch << V5_L2C_CTL_IPFDPT_OFFSET;
       l2c_ctl_val |= scan->data_prefetch << V5_L2C_CTL_DPFDPT_OFFSET;
+
+      /* Set tag RAM and data RAM setup and output cycle */
+      l2c_ctl_val &= ~(V5_L2C_CTL_TRAMOCTL_MASK | V5_L2C_CTL_TRAMICTL_MASK
+                       | V5_L2C_CTL_DRAMOCTL_MASK | V5_L2C_CTL_DRAMICTL_MASK);
+      l2c_ctl_val |= scan->tag_ram_ctl[0] << V5_L2C_CTL_TRAMOCTL_OFFSET;
+      l2c_ctl_val |= scan->tag_ram_ctl[1] << V5_L2C_CTL_TRAMICTL_OFFSET;
+      l2c_ctl_val |= scan->data_ram_ctl[0] << V5_L2C_CTL_DRAMOCTL_OFFSET;
+      l2c_ctl_val |= scan->data_ram_ctl[1] << V5_L2C_CTL_DRAMICTL_OFFSET;
+
       *l2c_ctl_base = l2c_ctl_val;
       break;
     }
